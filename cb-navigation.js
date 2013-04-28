@@ -4,6 +4,14 @@ var NavigationService = function (navigateContainer) {
     var _ = {
         isUndefined: function (obj) {
             return typeof (obj) === "undefined";
+        },
+        find: function (source, compareFunc) {
+            for (var i = 0; i < source.length; i++) {
+                if (compareFunc(source[i])) {
+                    return source[i];
+                }
+            }
+            return undefined;
         }
     };
 
@@ -15,14 +23,17 @@ var NavigationService = function (navigateContainer) {
     $Class.SCRIPTVIEWMODELPROPERTY = "viewModel";
 
     //Static Method
-    $Class.attachViewModel = function (id, viewModel) {
+    $Class.attachViewModel = function (id, viewModelFunc) {
         if ($(id).length <= 0) {
             throw "Can NOT find " + id;
         }
         if ($(id).prop('tagName') !== "SCRIPT") {
             throw "only script element can be attached";
         }
-        $(id)[0][$Class.SCRIPTVIEWMODELPROPERTY] = viewModel;
+        if (typeof (viewModelFunc) !== "function") {
+            throw "viewModelFunc should be a function that return the viewModel";
+        }
+        $(id)[0][$Class.SCRIPTVIEWMODELPROPERTY] = viewModelFunc;
     };
 
     //Private Fields
@@ -61,12 +72,20 @@ var NavigationService = function (navigateContainer) {
             navigateContainer.after(tmpContainerForNew);
             tmpContainerForNew.hide();
             tmpContainerForNew.html(contentObj.viewHtml);
-            if (_.isUndefined(contentObj.viewModel)) {
-                var script = _.find(tmpContainerForNew.children("script"), function (s) {
-                    return !_.isUndefined(s[$Class.SCRIPTVIEWMODELPROPERTY]);
-                });
-                if (!_.isUndefined(script)) {
-                    contentObj.viewModel = script[$Class.SCRIPTVIEWMODELPROPERTY];
+            //if (_.isUndefined(contentObj.viewModel)) {
+
+            //}
+            var script = _.find(tmpContainerForNew.children("script"), function (s) {
+                return !_.isUndefined(s[$Class.SCRIPTVIEWMODELPROPERTY]);
+            });
+
+            if (!_.isUndefined(script)) {
+                var scriptViewModelProp = script[$Class.SCRIPTVIEWMODELPROPERTY];
+                if (!_.isUndefined(scriptViewModelProp)) {
+                    if (typeof (scriptViewModelProp) !== "function") {
+                        throw "SCRIPTVIEWMODELPROPERTY should be a function return viewModel";
+                    }
+                    contentObj.viewModel = scriptViewModelProp(contentObj.viewModel);
                 }
             }
             self.currentActiveContent = contentObj;
@@ -177,7 +196,7 @@ var NavigationServiceAnimationConst = {
 var NavigationServiceAnimationManager = {
     doNavigateToAnimation: function (navToContent, finishedCallback) {
         navToContent = $(navToContent);
-        if (navToContent.filter("[" + NavigationServiceAnimationConst.TransformAnimationAttr + "='" + NavigationServiceAnimationConst.NoTransformAnimationTag + "']").length > 0) {
+        if (navToContent.children().filter("[" + NavigationServiceAnimationConst.TransformAnimationAttr + "='" + NavigationServiceAnimationConst.NoTransformAnimationTag + "']").length > 0) {
             navToContent.show();
             finishedCallback();
         } else {
@@ -188,7 +207,7 @@ var NavigationServiceAnimationManager = {
     doNavigateFromAnimation: function (navFromContent, finishedCallback) {
         navFromContent = $(navFromContent);
         if (navFromContent.length > 0) {
-            NavigationServiceAnimationManager.toAnimation(navFromContent, finishedCallback);
+            NavigationServiceAnimationManager.fromAnimation(navFromContent, finishedCallback);
         } else {
             finishedCallback();
         }

@@ -17,11 +17,14 @@ To used it:
    <script type="text/javascript" id="homeMainViewScript">
 		(function () {
 			**** some js code ***
-			NavigationService.attachViewModel("#homeMainViewScript", new HomeMainViewModel(new Backbone.Model({})));
+			NavigationService.attachViewModel("#homeMainViewScript", function(existingViewModel) {
+                return existingViewModel ? existingViewModel : new HomeMainViewModel(new Backbone.Model({}));
+            });
 		})();
    </script>
    1): the script should have a id
-   2): in the code, you should call the menthod NavigationService.attachViewModel, this method will let the navigation find you viewmodel when it navigate to the view. the first parameter is the script selector and the second parament is the viewmmodel instance
+   2): in the code, you should call the menthod NavigationService.attachViewModel, this method will let the navigation find you viewmodel when it navigate to the view. 
+   the first parameter is the script selector and the second parament is a function which accept an paramente of existing view Model and return the updated or new created view model
 
 6. If you need to navigate to the the view you created in steps 5, use the code below:
    navigationService.navigateTo('http://***.**.com/views/view1')
