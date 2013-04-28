@@ -16,7 +16,7 @@ To used it:
    in this view, you should create a script block like below:
    <script type="text/javascript" id="homeMainViewScript">
 		(function () {
-			**** same js code ***
+			**** some js code ***
 			NavigationService.attachViewModel("#homeMainViewScript", new HomeMainViewModel(new Backbone.Model({})));
 		})();
    </script>
