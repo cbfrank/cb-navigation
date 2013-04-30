@@ -50,4 +50,4 @@ To used it:
  if you want to manually navigate to an existing view, then specify the viewHtml with the html.
  if you want change the default animation of view transform, you can overwrite NavigationServiceAnimationManager.toAnimation and fromAnimation
 
- You can install it through Nuget https://nuget.org/packages/JQueryMVVMNavigationFramework/
+ You can install it through Nuget https://nuget.org/packages/JQueryMVVMNavigationFramework/ 
