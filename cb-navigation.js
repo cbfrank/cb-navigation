@@ -1,5 +1,6 @@
 ﻿//Dependency: Jquery, Underscore
 //Define the NavigationService class
+//if use want to delay the navigation animation, set NavigationService.NavigateAnimationDelay to a value more than 0 (millisecond)
 var NavigationService = function (navigateContainer) {
     var _ = {
         isUndefined: function (obj) {
