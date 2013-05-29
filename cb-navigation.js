@@ -22,6 +22,10 @@ var NavigationService = function (navigateContainer) {
     $Class.VIEWMODELONINACTIVEEVENT = "onInactive";
     $Class.SCRIPTVIEWMODELPROPERTY = "viewModel";
 
+    if (typeof ($Class.NavigateAnimationDelay) === "undefined") {
+        $Class.NavigateAnimationDelay = 0; //millisecond
+    }
+
     //Static Method
     $Class.attachViewModel = function (id, viewModelFunc) {
         if ($(id).length <= 0) {
@@ -114,7 +118,13 @@ var NavigationService = function (navigateContainer) {
                     NavigationServiceAnimationManager.doNavigateToAnimation(tmpContainerForNew, afterAnimation);
                 }
 
-                NavigationServiceAnimationManager.doNavigateFromAnimation(navigateContainer.children(), showNewContent);
+                if ($Class.NavigateAnimationDelay > 0) {
+                    setTimeout(function () {
+                        NavigationServiceAnimationManager.doNavigateFromAnimation(navigateContainer.children(), showNewContent);
+                    }, $Class.NavigateAnimationDelay);
+                } else {
+                    NavigationServiceAnimationManager.doNavigateFromAnimation(navigateContainer.children(), showNewContent);
+                }
             }
 
 
