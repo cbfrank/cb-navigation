@@ -38,6 +38,8 @@ To used it:
 
 6. If you need to navigate to the the view you created in steps 5, use the code below:
    navigationService.navigateTo('http://***.**.com/views/view1')
+  
+7. if you want to delay the navigation animation, set NavigationService.NavigateAnimationDelay to a value more than 0 (millisecond)
 
  Methods:
  
