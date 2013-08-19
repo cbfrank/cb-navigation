@@ -41,6 +41,20 @@ var NavigationService = function (navigateContainer) {
         $(id)[0][$Class.SCRIPTVIEWMODELPROPERTY] = viewModelFunc;
     };
 
+    $Class.GetAllCachedViewModels = function () {
+        return self.internalViewsViewModelsCache;
+    };
+
+    $Class.FindCachedViewModel = function (isMatchFunc) {
+        var all = $Class.GetAllCachedViewModels();
+        for (var i = 0; i < all.length; i++) {
+            if (isMatchFunc(all[i])) {
+                return all[i];
+            }
+        }
+        return undefined;
+    };
+
     //Private Fields
     self.internalViewsViewModelsCache = new Array(); //{url:***, viewModel:***, viewHtml:***}
     self.currentActiveContent = undefined;
