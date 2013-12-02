@@ -22,13 +22,17 @@ var NavigationService = function (navigateContainer) {
     $Class.VIEWMODELONACTIVEEVENT = "onActive";
     $Class.VIEWMODELONINACTIVEEVENT = "onInactive";
     $Class.SCRIPTVIEWMODELPROPERTY = "viewModel";
+    $Class.VIEWRELATEDOPTIONPROPERTY = "viewRelatedOption";
+
+    var OnViewInit = "OnViewInit";
+    var OnViewUnload = "OnViewUnload";
 
     if (typeof ($Class.NavigateAnimationDelay) === "undefined") {
         $Class.NavigateAnimationDelay = 0; //millisecond
     }
 
     //Static Method
-    $Class.attachViewModel = function (id, viewModelFunc) {
+    $Class.attachViewModel = function (id, viewModelFunc, viewInitFunc, viewUnloadFunc) {
         if ($(id).length <= 0) {
             throw "Can NOT find " + id;
         }
@@ -38,7 +42,12 @@ var NavigationService = function (navigateContainer) {
         if (typeof (viewModelFunc) !== "function") {
             throw "viewModelFunc should be a function that return the viewModel";
         }
-        $(id)[0][$Class.SCRIPTVIEWMODELPROPERTY] = viewModelFunc;
+        var element = $(id)[0];
+        element[$Class.SCRIPTVIEWMODELPROPERTY] = viewModelFunc;
+        var viewRelatedOption = {};
+        viewRelatedOption[OnViewInit] = viewInitFunc;
+        viewRelatedOption[OnViewUnload] = viewUnloadFunc;
+        element[$Class.VIEWRELATEDOPTIONPROPERTY] = viewRelatedOption;
     };
 
     $Class.GetAllCachedViewModels = function () {
@@ -74,7 +83,14 @@ var NavigationService = function (navigateContainer) {
 
     var doNavigation = function (viewViewModelObj) {
         var continueFunc = function () {
-            //navigateContainer.empty();
+            //execute current will remove view's unload function
+            var currentWillRemovViewScript = _.find(navigateContainer.find("script"), function (s) {
+                return !_.isUndefined(s[$Class.SCRIPTVIEWMODELPROPERTY]);
+            });
+            if (currentWillRemovViewScript && currentWillRemovViewScript[$Class.VIEWRELATEDOPTIONPROPERTY] && currentWillRemovViewScript[$Class.VIEWRELATEDOPTIONPROPERTY][OnViewUnload]) {
+                currentWillRemovViewScript[$Class.VIEWRELATEDOPTIONPROPERTY][OnViewUnload]();
+            }
+
 
             var contentObj = _.find(self.internalViewsViewModelsCache, function (item) {
                 return item.url === viewViewModelObj.url;
@@ -98,6 +114,7 @@ var NavigationService = function (navigateContainer) {
                 return !_.isUndefined(s[$Class.SCRIPTVIEWMODELPROPERTY]);
             });
 
+            var viewRelatedOption = undefined;
             if (!_.isUndefined(script)) {
                 var scriptViewModelProp = script[$Class.SCRIPTVIEWMODELPROPERTY];
                 if (!_.isUndefined(scriptViewModelProp)) {
@@ -106,6 +123,7 @@ var NavigationService = function (navigateContainer) {
                     }
                     contentObj.viewModel = scriptViewModelProp(contentObj.viewModel);
                 }
+                viewRelatedOption = script[$Class.VIEWRELATEDOPTIONPROPERTY];
             }
             self.currentActiveContent = contentObj;
 
@@ -142,7 +160,9 @@ var NavigationService = function (navigateContainer) {
                 }
             }
 
-
+            if (viewRelatedOption && viewRelatedOption[OnViewInit]) {
+                viewRelatedOption[OnViewInit]();
+            }
             if (!_.isUndefined(self.currentActiveContent) && !_.isUndefined(self.currentActiveContent.viewModel) && !_.isUndefined(self.currentActiveContent.viewModel[$Class.VIEWMODELONACTIVEEVENT])) {
                 self.currentActiveContent.viewModel[$Class.VIEWMODELONACTIVEEVENT](afterActived);
             } else {
