@@ -1,7 +1,12 @@
 ﻿//Dependency: Jquery, Underscore
 //Define the NavigationService class
-//if use want to delay the navigation animation, set NavigationService.NavigateAnimationDelay to a value more than 0 (millisecond)
-var NavigationService = function (navigateContainer) {
+//if user want to delay the navigation animation, set NavigationService.NavigateAnimationDelay to a value more than 0 (millisecond)
+//option:
+//  validateHttpResponse: function(responseData, textStatus, jqXHR), this function is uused to check if the server response data is the validate, in some case, for example, the session time out, the request
+//                          will be finally navigated to the login page, not the requestd page, so use this function to check
+//                          this function should return true or false to indicate the request result is correct or not
+//  onParseContentHtmlException: function(exception), will be called when parse content html error, if return true, then will throw the exception again
+var NavigationService = function (navigateContainer, option) {
     var _ = {
         isUndefined: function (obj) {
             return typeof (obj) === "undefined";
@@ -106,7 +111,15 @@ var NavigationService = function (navigateContainer) {
             var tmpContainerForNew = $("<div/>");
             navigateContainer.after(tmpContainerForNew);
             tmpContainerForNew.hide();
-            tmpContainerForNew.html(contentObj.viewHtml);
+            try {
+                tmpContainerForNew.html(contentObj.viewHtml);
+            } catch (e) {
+                if (!option.onParseContentHtmlException || option.onParseContentHtmlException(e)) {
+                    throw e;
+                }
+                return;
+            }
+
             //if (_.isUndefined(contentObj.viewModel)) {
 
             //}
@@ -190,12 +203,17 @@ var NavigationService = function (navigateContainer) {
         }
 
         if (requestNew || _.isUndefined(vvm.viewHtml)) {
-            requestObj.request(function (data) {
+            requestObj.request(function (data, textStatus, jqXHR) {
+                if (option.validateHttpResponse && !option.validateHttpResponse(data, textStatus, jqXHR)) {
+                    return;
+                }
                 if (!_.isUndefined(data.status)) {
                     throw data.responseText;
                 }
                 $.extend(vvm, { url: requestObj.url, viewModel: viewModel, viewHtml: data });
                 doNavigation(vvm);
+            }, function (jqXHR, textStatus, errorThrown) {
+                alert('Navigate to "' + requestObj.url + '" failed');
             });
         } else {
             $.extend(vvm, { url: requestObj.url, viewModel: viewModel, viewHtml: viewHtml });
@@ -219,10 +237,17 @@ var NavigationService = function (navigateContainer) {
         var requestObj = url;
         if ($.type(url) === "string") {
             requestObj = {
-                request: function (callBack) {
-                    $.ajax({
+                request: function (callBack, failcallBack) {
+                    var a = $.ajax({
                         url: url
-                    }).done(callBack).fail(callBack);
+                    }).always(function (data, textStatus, jqXHR) {
+                        if (option.validateHttpResponse && !option.validateHttpResponse(data, textStatus, jqXHR)) {
+                            return;
+                        }
+                    }).done(callBack);
+                    if (failcallBack) {
+                        a.fail(failcallBack);
+                    }
                 },
                 url: url
             };
