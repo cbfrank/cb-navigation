@@ -6,6 +6,8 @@
 //                          will be finally navigated to the login page, not the requestd page, so use this function to check
 //                          this function should return true or false to indicate the request result is correct or not
 //  onParseContentHtmlException: function(exception), will be called when parse content html error, if return true, then will throw the exception again
+//  onBeforeDoNavigate: function() will be call when the navigation actual begins (before ajax call)
+//  onEndNavigate:  function() will be called after the navigate is done (won't wait until animation finish)
 var NavigationService = function (navigateContainer, option) {
     var _ = {
         isUndefined: function (obj) {
@@ -115,14 +117,17 @@ var NavigationService = function (navigateContainer, option) {
                 tmpContainerForNew.html(contentObj.viewHtml);
             } catch (e) {
                 if (!option.onParseContentHtmlException || option.onParseContentHtmlException(e)) {
+                    if (option.onEndNavigate) {
+                        option.onEndNavigate();
+                    }
                     throw e;
+                }
+                if (option.onEndNavigate) {
+                    option.onEndNavigate();
                 }
                 return;
             }
 
-            //if (_.isUndefined(contentObj.viewModel)) {
-
-            //}
             var script = _.find(tmpContainerForNew.children("script"), function (s) {
                 return !_.isUndefined(s[$Class.SCRIPTVIEWMODELPROPERTY]);
             });
@@ -163,7 +168,9 @@ var NavigationService = function (navigateContainer, option) {
 
                     NavigationServiceAnimationManager.doNavigateToAnimation(tmpContainerForNew, afterAnimation);
                 }
-
+                if (option.onEndNavigate) {
+                    option.onEndNavigate();
+                }
                 if ($Class.NavigateAnimationDelay > 0) {
                     setTimeout(function () {
                         NavigationServiceAnimationManager.doNavigateFromAnimation(navigateContainer.children(), showNewContent);
@@ -201,7 +208,9 @@ var NavigationService = function (navigateContainer, option) {
         if (_.isUndefined(vvm)) {
             vvm = {};
         }
-
+        if (option.onBeforeDoNavigate) {
+            option.onBeforeDoNavigate();
+        }
         if (requestNew || _.isUndefined(vvm.viewHtml)) {
             requestObj.request(function (data, textStatus, jqXHR) {
                 if (option.validateHttpResponse && !option.validateHttpResponse(data, textStatus, jqXHR)) {
