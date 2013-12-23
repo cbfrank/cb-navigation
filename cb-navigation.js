@@ -146,6 +146,11 @@ var NavigationService = function (navigateContainer, option) {
             self.currentActiveContent = contentObj;
 
             function afterActived() {
+                if (navigateContainer.children().length > 0) {
+                    navigateContainer.children().each(function (index, element) {
+                        ko.cleanNode(element);
+                    });
+                }
                 ko.applyBindings(contentObj.viewModel, tmpContainerForNew[0]);
 
                 function showNewContent() {
