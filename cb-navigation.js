@@ -128,7 +128,7 @@ var NavigationService = function (navigateContainer, option) {
                 return;
             }
 
-            var script = _.find(tmpContainerForNew.children("script"), function (s) {
+            var script = _.find(tmpContainerForNew.find("script"), function (s) {
                 return !_.isUndefined(s[$Class.SCRIPTVIEWMODELPROPERTY]);
             });
 
