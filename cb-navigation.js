@@ -88,122 +88,124 @@ var NavigationService = function (navigateContainer, option) {
 
     self.init(navigateContainer);
 
-    var doNavigation = function (viewViewModelObj) {
-        var continueFunc = function () {
-            //execute current will remove view's unload function
-            var currentWillRemovViewScript = _.find(navigateContainer.find("script"), function (s) {
-                return !_.isUndefined(s[$Class.SCRIPTVIEWMODELPROPERTY]);
-            });
-            if (currentWillRemovViewScript && currentWillRemovViewScript[$Class.VIEWRELATEDOPTIONPROPERTY] && currentWillRemovViewScript[$Class.VIEWRELATEDOPTIONPROPERTY][OnViewUnload]) {
-                currentWillRemovViewScript[$Class.VIEWRELATEDOPTIONPROPERTY][OnViewUnload]();
-            }
+    //navigatedCallBack: function(bool), the parameter indicate if the naviation action is cancel or not
+    var doNavigation = function (viewViewModelObj, navigatedCallBack) {
+        //execute current will remove view's unload function
+        var currentWillRemovViewScript = _.find(navigateContainer.find("script"), function (s) {
+            return !_.isUndefined(s[$Class.SCRIPTVIEWMODELPROPERTY]);
+        });
+        if (currentWillRemovViewScript && currentWillRemovViewScript[$Class.VIEWRELATEDOPTIONPROPERTY] && currentWillRemovViewScript[$Class.VIEWRELATEDOPTIONPROPERTY][OnViewUnload]) {
+            currentWillRemovViewScript[$Class.VIEWRELATEDOPTIONPROPERTY][OnViewUnload]();
+        }
 
 
-            var contentObj = _.find(self.internalViewsViewModelsCache, function (item) {
-                return item.url === viewViewModelObj.url;
-            });
-            if (_.isUndefined(contentObj)) {
-                contentObj = viewViewModelObj;
-                self.internalViewsViewModelsCache.push(contentObj);
-            } else {
-                $.extend(contentObj, viewViewModelObj);
-            }
-
-            //navigateContainer.html(contentObj.viewHtml);
-            var tmpContainerForNew = $("<div/>");
-            navigateContainer.after(tmpContainerForNew);
-            tmpContainerForNew.hide();
-            try {
-                tmpContainerForNew.html(contentObj.viewHtml);
-            } catch (e) {
-                if (!option.onParseContentHtmlException || option.onParseContentHtmlException(e)) {
-                    if (option.onEndNavigate) {
-                        option.onEndNavigate();
-                    }
-                    throw e;
-                }
-                if (option.onEndNavigate) {
-                    option.onEndNavigate();
-                }
-                return;
-            }
-
-            var script = _.find(tmpContainerForNew.find("script"), function (s) {
-                return !_.isUndefined(s[$Class.SCRIPTVIEWMODELPROPERTY]);
-            });
-
-            var viewRelatedOption = undefined;
-            if (!_.isUndefined(script)) {
-                var scriptViewModelProp = script[$Class.SCRIPTVIEWMODELPROPERTY];
-                if (!_.isUndefined(scriptViewModelProp)) {
-                    if (typeof (scriptViewModelProp) !== "function") {
-                        throw "SCRIPTVIEWMODELPROPERTY should be a function return viewModel";
-                    }
-                    contentObj.viewModel = scriptViewModelProp(contentObj.viewModel);
-                }
-                viewRelatedOption = script[$Class.VIEWRELATEDOPTIONPROPERTY];
-            }
-            self.currentActiveContent = contentObj;
-
-            function afterActived() {
-                if (navigateContainer.children().length > 0) {
-                    navigateContainer.children().each(function (index, element) {
-                        ko.cleanNode(element);
-                    });
-                }
-                ko.applyBindings(contentObj.viewModel, tmpContainerForNew[0]);
-
-                function showNewContent() {
-                    navigateContainer.empty();
-                    //tmpContainerForNew.show();
-                    navigateContainer.append(tmpContainerForNew);
-
-                    function afterAnimation() {
-                        //forec to refresh, because I don't know why somt time, the content is not auto refreshed.
-                        if (ko.$helper && ko.$helper.browser.isIE && ko.$helper.browser.version == 10) {
-                            setTimeout(function () {
-                                navigateContainer.focus();
-                                var tmpHeight = navigateContainer.height();
-                                navigateContainer.height(tmpHeight + 1);
-                                navigateContainer.height(tmpHeight);
-                                navigateContainer.height("auto");
-                            }, 500);
-                        }
-                    }
-
-                    NavigationServiceAnimationManager.doNavigateToAnimation(tmpContainerForNew, afterAnimation);
-                }
-                if (option.onEndNavigate) {
-                    option.onEndNavigate();
-                }
-                if ($Class.NavigateAnimationDelay > 0) {
-                    setTimeout(function () {
-                        NavigationServiceAnimationManager.doNavigateFromAnimation(navigateContainer.children(), showNewContent);
-                    }, $Class.NavigateAnimationDelay);
-                } else {
-                    NavigationServiceAnimationManager.doNavigateFromAnimation(navigateContainer.children(), showNewContent);
-                }
-            }
-
-            if (viewRelatedOption && viewRelatedOption[OnViewInit]) {
-                viewRelatedOption[OnViewInit]();
-            }
-            if (!_.isUndefined(self.currentActiveContent) && !_.isUndefined(self.currentActiveContent.viewModel) && !_.isUndefined(self.currentActiveContent.viewModel[$Class.VIEWMODELONACTIVEEVENT])) {
-                self.currentActiveContent.viewModel[$Class.VIEWMODELONACTIVEEVENT](afterActived);
-            } else {
-                afterActived();
-            }
-        };
-
-
-        if (!_.isUndefined(self.currentActiveContent) && !_.isUndefined(self.currentActiveContent.viewModel) && !_.isUndefined(self.currentActiveContent.viewModel[$Class.VIEWMODELONINACTIVEEVENT])) {
-            self.currentActiveContent.viewModel[$Class.VIEWMODELONINACTIVEEVENT](continueFunc);
+        var contentObj = _.find(self.internalViewsViewModelsCache, function (item) {
+            return item.url === viewViewModelObj.url;
+        });
+        if (_.isUndefined(contentObj)) {
+            contentObj = viewViewModelObj;
+            self.internalViewsViewModelsCache.push(contentObj);
         } else {
-            continueFunc();
+            $.extend(contentObj, viewViewModelObj);
+        }
+
+        //navigateContainer.html(contentObj.viewHtml);
+        var tmpContainerForNew = $("<div/>");
+        navigateContainer.after(tmpContainerForNew);
+        tmpContainerForNew.hide();
+        try {
+            tmpContainerForNew.html(contentObj.viewHtml);
+        } catch (e) {
+            if (!option.onParseContentHtmlException || option.onParseContentHtmlException(e)) {
+                if (option.onEndNavigate) {
+                    option.onEndNavigate();
+                }
+                if (navigatedCallBack) {
+                    navigatedCallBack(false);
+                }
+                throw e;
+            }
+            if (option.onEndNavigate) {
+                option.onEndNavigate();
+                if (navigatedCallBack) {
+                    navigatedCallBack(false);
+                }
+            }
+            return;
+        }
+
+        var script = _.find(tmpContainerForNew.find("script"), function (s) {
+            return !_.isUndefined(s[$Class.SCRIPTVIEWMODELPROPERTY]);
+        });
+
+        var viewRelatedOption = undefined;
+        if (!_.isUndefined(script)) {
+            var scriptViewModelProp = script[$Class.SCRIPTVIEWMODELPROPERTY];
+            if (!_.isUndefined(scriptViewModelProp)) {
+                if (typeof (scriptViewModelProp) !== "function") {
+                    throw "SCRIPTVIEWMODELPROPERTY should be a function return viewModel";
+                }
+                contentObj.viewModel = scriptViewModelProp(contentObj.viewModel);
+            }
+            viewRelatedOption = script[$Class.VIEWRELATEDOPTIONPROPERTY];
+        }
+        self.currentActiveContent = contentObj;
+
+        function afterActived() {
+            if (navigateContainer.children().length > 0) {
+                navigateContainer.children().each(function (index, element) {
+                    ko.cleanNode(element);
+                });
+            }
+            ko.applyBindings(contentObj.viewModel, tmpContainerForNew[0]);
+
+            function showNewContent() {
+                navigateContainer.empty();
+                //tmpContainerForNew.show();
+                navigateContainer.append(tmpContainerForNew);
+
+                function afterAnimation() {
+                    //forec to refresh, because I don't know why somt time, the content is not auto refreshed.
+                    if (ko.$helper && ko.$helper.browser.isIE && ko.$helper.browser.version == 10) {
+                        setTimeout(function () {
+                            navigateContainer.focus();
+                            var tmpHeight = navigateContainer.height();
+                            navigateContainer.height(tmpHeight + 1);
+                            navigateContainer.height(tmpHeight);
+                            navigateContainer.height("auto");
+                        }, 500);
+                    }
+                }
+
+                NavigationServiceAnimationManager.doNavigateToAnimation(tmpContainerForNew, afterAnimation);
+            }
+            if (option.onEndNavigate) {
+                option.onEndNavigate();
+            }
+            if (navigatedCallBack) {
+                navigatedCallBack(false);
+            }
+            if ($Class.NavigateAnimationDelay > 0) {
+                setTimeout(function () {
+                    NavigationServiceAnimationManager.doNavigateFromAnimation(navigateContainer.children(), showNewContent);
+                }, $Class.NavigateAnimationDelay);
+            } else {
+                NavigationServiceAnimationManager.doNavigateFromAnimation(navigateContainer.children(), showNewContent);
+            }
+        }
+
+        if (viewRelatedOption && viewRelatedOption[OnViewInit]) {
+            viewRelatedOption[OnViewInit]();
+        }
+        if (!_.isUndefined(self.currentActiveContent) && !_.isUndefined(self.currentActiveContent.viewModel) && !_.isUndefined(self.currentActiveContent.viewModel[$Class.VIEWMODELONACTIVEEVENT])) {
+            self.currentActiveContent.viewModel[$Class.VIEWMODELONACTIVEEVENT](afterActived);
+        } else {
+            afterActived();
         }
     };
 
-    var navigateToEx = function (requestObj, requestNew, viewModel, viewHtml) {
+    //navigatedCallBack: function(bool), the parameter indicate if the naviation action is cancel or not
+    var navigateToEx = function (requestObj, requestNew, viewModel, viewHtml, navigatedCallBack) {
         if (requestNew && !_.isUndefined(viewHtml)) {
             throw "When requestNew is true, can't specify viewHtml";
         }
@@ -213,36 +215,58 @@ var NavigationService = function (navigateContainer, option) {
         if (_.isUndefined(vvm)) {
             vvm = {};
         }
-        if (option.onBeforeDoNavigate) {
-            option.onBeforeDoNavigate();
-        }
-        if (requestNew || _.isUndefined(vvm.viewHtml)) {
-            requestObj.request(function (data, textStatus, jqXHR) {
-                if (option.validateHttpResponse && !option.validateHttpResponse(data, textStatus, jqXHR)) {
-                    return;
+
+        var continueFunc = function (cancel) {
+            if (typeof (cancel) === "boolean" && cancel) {
+                if (navigatedCallBack) {
+                    navigatedCallBack(true);
                 }
-                if (!_.isUndefined(data.status)) {
-                    throw data.responseText;
-                }
-                $.extend(vvm, { url: requestObj.url, viewModel: viewModel, viewHtml: data });
-                doNavigation(vvm);
-            }, function (jqXHR, textStatus, errorThrown) {
-                alert('Navigate to "' + requestObj.url + '" failed');
-            });
+                return;
+            }
+            if (option.onBeforeDoNavigate) {
+                option.onBeforeDoNavigate();
+            }
+            if (requestNew || _.isUndefined(vvm.viewHtml)) {
+                requestObj.request(function (data, textStatus, jqXHR) {
+                    if (option.validateHttpResponse && !option.validateHttpResponse(data, textStatus, jqXHR)) {
+                        return;
+                    }
+                    if (!_.isUndefined(data.status)) {
+                        throw data.responseText;
+                    }
+                    $.extend(vvm, { url: requestObj.url, viewModel: viewModel, viewHtml: data });
+                    doNavigation(vvm, navigatedCallBack);
+                }, function (jqXHR, textStatus, errorThrown) {
+                    alert('Navigate to "' + requestObj.url + '" failed');
+                });
+            } else {
+                $.extend(vvm, { url: requestObj.url, viewModel: viewModel, viewHtml: viewHtml });
+                doNavigation(vvm, navigatedCallBack);
+            }
+        };
+
+        if (!_.isUndefined(self.currentActiveContent) && !_.isUndefined(self.currentActiveContent.viewModel) && !_.isUndefined(self.currentActiveContent.viewModel[$Class.VIEWMODELONINACTIVEEVENT])) {
+            self.currentActiveContent.viewModel[$Class.VIEWMODELONINACTIVEEVENT](continueFunc);
         } else {
-            $.extend(vvm, { url: requestObj.url, viewModel: viewModel, viewHtml: viewHtml });
-            doNavigation(vvm);
+            continueFunc();
         }
     };
 
     //url [, viewModel, viewHtml]
     //url[, true, viewModel]
-    self.navigateTo = function (url, requestNew, viewModel, viewHtml) {
+    ////url, navigatedCallBack
+    self.navigateTo = function (url, requestNew, viewModel, viewHtml, navigatedCallBack) {
         if (_.isUndefined(requestNew)) {
             requestNew = false;
         }
-
-        if ($.type(requestNew) !== "boolean") {
+        if ($.type(requestNew) === "function") {
+            navigatedCallBack = requestNew;
+            requestNew = true;
+            if (typeof (viewModel) !== "undefined" || typeof (viewHtml) != "undefined") {
+                throw "Incorrect method call";
+            }
+        }
+        else if ($.type(requestNew) !== "boolean") {
             viewHtml = viewModel;
             viewModel = requestNew;
             requestNew = _.isUndefined(viewHtml);
@@ -267,7 +291,7 @@ var NavigationService = function (navigateContainer, option) {
             };
         }
 
-        navigateToEx(requestObj, requestNew, viewModel, viewHtml);
+        navigateToEx(requestObj, requestNew, viewModel, viewHtml, navigatedCallBack);
     };
 
 };
