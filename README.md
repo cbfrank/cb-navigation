@@ -54,3 +54,15 @@ To used it:
  if you want change the default animation of view transform, you can overwrite NavigationServiceAnimationManager.toAnimation and fromAnimation
 
  You can install it through Nuget https://nuget.org/packages/JQueryMVVMNavigationFramework/ 
+
+//Dependency: Jquery, Underscore
+//Define the NavigationService class
+//if user want to delay the navigation animation, set NavigationService.NavigateAnimationDelay to a value more than 0 (millisecond)
+//option:
+//  validateHttpResponse: function(responseData, textStatus, jqXHR), this function is uused to check if the server response data is the validate, in some case, for example, the session time out, the request
+//                          will be finally navigated to the login page, not the requestd page, so use this function to check
+//                          this function should return true or false to indicate the request result is correct or not
+//  onParseContentHtmlException: function(exception), will be called when parse content html error, if return true, then will throw the exception again
+//  onBeforeDoNavigate: function() will be call when the navigation actual begins (before ajax call)
+//  onEndNavigate:  function() will be called after the navigate is done (won't wait until animation finish)
+//  onNavigationHttpRequestError: function(jqXHR, textStatus, errorThrown) this functuion will be called when try to ajax call the navigate url and failed

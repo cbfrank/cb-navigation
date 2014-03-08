@@ -1,14 +1,4 @@
-﻿//Dependency: Jquery, Underscore
-//Define the NavigationService class
-//if user want to delay the navigation animation, set NavigationService.NavigateAnimationDelay to a value more than 0 (millisecond)
-//option:
-//  validateHttpResponse: function(responseData, textStatus, jqXHR), this function is uused to check if the server response data is the validate, in some case, for example, the session time out, the request
-//                          will be finally navigated to the login page, not the requestd page, so use this function to check
-//                          this function should return true or false to indicate the request result is correct or not
-//  onParseContentHtmlException: function(exception), will be called when parse content html error, if return true, then will throw the exception again
-//  onBeforeDoNavigate: function() will be call when the navigation actual begins (before ajax call)
-//  onEndNavigate:  function() will be called after the navigate is done (won't wait until animation finish)
-var NavigationService = function (navigateContainer, option) {
+﻿var NavigationService = function (navigateContainer, option) {
     var _ = {
         isUndefined: function (obj) {
             return typeof (obj) === "undefined";
@@ -237,7 +227,11 @@ var NavigationService = function (navigateContainer, option) {
                     $.extend(vvm, { url: requestObj.url, viewModel: viewModel, viewHtml: data });
                     doNavigation(vvm, navigatedCallBack);
                 }, function (jqXHR, textStatus, errorThrown) {
-                    alert('Navigate to "' + requestObj.url + '" failed');
+                    if (option.onNavigationHttpRequestError) {
+                        option.onNavigationHttpRequestError(jqXHR, textStatus, errorThrown);
+                    } else {
+                        alert('Navigate to "' + requestObj.url + '" failed');
+                    }
                 });
             } else {
                 $.extend(vvm, { url: requestObj.url, viewModel: viewModel, viewHtml: viewHtml });
