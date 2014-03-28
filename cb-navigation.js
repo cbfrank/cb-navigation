@@ -139,20 +139,18 @@
             }
             viewRelatedOption = script[$Class.VIEWRELATEDOPTIONPROPERTY];
         }
-        self.currentActiveContent = contentObj;
 
-        function afterActived() {
-            if (navigateContainer.children().length > 0) {
-                navigateContainer.children().each(function (index, element) {
-                    ko.cleanNode(element);
-                });
+        function afterActived(continueActive) {
+            if (typeof (continueActive) == "undefined") {
+                continueActive = true;
             }
-            ko.applyBindings(contentObj.viewModel, tmpContainerForNew[0]);
 
             function showNewContent() {
                 navigateContainer.empty();
                 //tmpContainerForNew.show();
                 navigateContainer.append(tmpContainerForNew);
+
+                ko.applyBindings(contentObj.viewModel, tmpContainerForNew[0]);
 
                 function afterAnimation() {
                     //forec to refresh, because I don't know why somt time, the content is not auto refreshed.
@@ -169,26 +167,40 @@
 
                 NavigationServiceAnimationManager.doNavigateToAnimation(tmpContainerForNew, afterAnimation);
             }
+
+            if (continueActive) {
+                self.currentActiveContent = contentObj;
+                if (navigateContainer.children().length > 0) {
+                    navigateContainer.children().each(function (index, element) {
+                        ko.cleanNode(element);
+                    });
+                }
+            }
+
             if (option.onEndNavigate) {
-                option.onEndNavigate();
+                option.onEndNavigate(continueActive);
             }
             if (navigatedCallBack) {
-                navigatedCallBack(false);
+                navigatedCallBack(!continueActive);
             }
-            if ($Class.NavigateAnimationDelay > 0) {
-                setTimeout(function () {
+            if (continueActive) {
+                if ($Class.NavigateAnimationDelay > 0) {
+                    setTimeout(function () {
+                        NavigationServiceAnimationManager.doNavigateFromAnimation(navigateContainer.children(), showNewContent);
+                    }, $Class.NavigateAnimationDelay);
+                } else {
                     NavigationServiceAnimationManager.doNavigateFromAnimation(navigateContainer.children(), showNewContent);
-                }, $Class.NavigateAnimationDelay);
+                }
             } else {
-                NavigationServiceAnimationManager.doNavigateFromAnimation(navigateContainer.children(), showNewContent);
+                tmpContainerForNew.remove();
             }
         }
 
         if (viewRelatedOption && viewRelatedOption[OnViewInit]) {
             viewRelatedOption[OnViewInit]();
         }
-        if (!_.isUndefined(self.currentActiveContent) && !_.isUndefined(self.currentActiveContent.viewModel) && !_.isUndefined(self.currentActiveContent.viewModel[$Class.VIEWMODELONACTIVEEVENT])) {
-            self.currentActiveContent.viewModel[$Class.VIEWMODELONACTIVEEVENT](afterActived);
+        if (!_.isUndefined(contentObj) && !_.isUndefined(contentObj) && !_.isUndefined(contentObj.viewModel[$Class.VIEWMODELONACTIVEEVENT])) {
+            contentObj.viewModel[$Class.VIEWMODELONACTIVEEVENT](afterActived);
         } else {
             afterActived();
         }

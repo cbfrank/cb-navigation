@@ -44,7 +44,7 @@ To used it:
 
  Methods:
  
- navigateTo: (url, [requestNew,] [viewModel,] [viewHtml])
+ navigateTo: (url, [requestNew,] [viewModel,] [viewHtml], [navigatedCallBack])
  
  the url is the key of each view, and navigate servie us it to find the view. for the default, requestNew is false, viewModel and viewHtml are both empty
  when the navigate service find the request is true or can't find the view from cache, it will try to call this url to get the view html and then evalate the html to get the viewModel (if viewModel is empty)
@@ -64,5 +64,5 @@ To used it:
 //                          this function should return true or false to indicate the request result is correct or not
 //  onParseContentHtmlException: function(exception), will be called when parse content html error, if return true, then will throw the exception again
 //  onBeforeDoNavigate: function() will be call when the navigation actual begins (before ajax call)
-//  onEndNavigate:  function() will be called after the navigate is done (won't wait until animation finish)
+//  onEndNavigate:  function(bool) will be called after the navigate is done (won't wait until animation finish), parameter is indicate if the navigate continue or cancelled (true continue, false cancelled)
 //  onNavigationHttpRequestError: function(jqXHR, textStatus, errorThrown) this functuion will be called when try to ajax call the navigate url and failed
