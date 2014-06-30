@@ -199,7 +199,7 @@
         if (viewRelatedOption && viewRelatedOption[OnViewInit]) {
             viewRelatedOption[OnViewInit]();
         }
-        if (!_.isUndefined(contentObj) && !_.isUndefined(contentObj) && !_.isUndefined(contentObj.viewModel[$Class.VIEWMODELONACTIVEEVENT])) {
+        if (!_.isUndefined(contentObj) && !_.isUndefined(contentObj) && !_.isUndefined(contentObj.viewModel) && !_.isUndefined(contentObj.viewModel[$Class.VIEWMODELONACTIVEEVENT])) {
             contentObj.viewModel[$Class.VIEWMODELONACTIVEEVENT](afterActived);
         } else {
             afterActived();
