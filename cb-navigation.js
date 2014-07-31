@@ -80,6 +80,7 @@
 
     //navigatedCallBack: function(bool), the parameter indicate if the naviation action is cancel or not
     var doNavigation = function (viewViewModelObj, navigatedCallBack) {
+        var sameView = self.currentActiveContent && (self.currentActiveContent.url === viewViewModelObj.url);
         //execute current will remove view's unload function
         var currentWillRemovViewScript = _.find(navigateContainer.find("script"), function (s) {
             return !_.isUndefined(s[$Class.SCRIPTVIEWMODELPROPERTY]);
@@ -100,29 +101,35 @@
         }
 
         //navigateContainer.html(contentObj.viewHtml);
-        var tmpContainerForNew = $("<div/>");
-        navigateContainer.after(tmpContainerForNew);
-        tmpContainerForNew.hide();
-        try {
-            tmpContainerForNew.html(contentObj.viewHtml);
-        } catch (e) {
-            if (!option.onParseContentHtmlException || option.onParseContentHtmlException(e)) {
+        var tmpContainerForNew = undefined;
+        if (sameView) {
+            tmpContainerForNew = navigateContainer.children();
+        } else {
+            tmpContainerForNew = $("<div/>");
+            navigateContainer.after(tmpContainerForNew);
+            tmpContainerForNew.hide();
+            try {
+                tmpContainerForNew.html(contentObj.viewHtml);
+            } catch (e) {
+                if (!option.onParseContentHtmlException || option.onParseContentHtmlException(e)) {
+                    if (option.onEndNavigate) {
+                        option.onEndNavigate();
+                    }
+                    if (navigatedCallBack) {
+                        navigatedCallBack(false);
+                    }
+                    throw e;
+                }
                 if (option.onEndNavigate) {
                     option.onEndNavigate();
+                    if (navigatedCallBack) {
+                        navigatedCallBack(false);
+                    }
                 }
-                if (navigatedCallBack) {
-                    navigatedCallBack(false);
-                }
-                throw e;
+                return;
             }
-            if (option.onEndNavigate) {
-                option.onEndNavigate();
-                if (navigatedCallBack) {
-                    navigatedCallBack(false);
-                }
-            }
-            return;
         }
+
 
         var script = _.find(tmpContainerForNew.find("script"), function (s) {
             return !_.isUndefined(s[$Class.SCRIPTVIEWMODELPROPERTY]);
@@ -146,11 +153,12 @@
             }
 
             function showNewContent() {
-                navigateContainer.empty();
-                //tmpContainerForNew.show();
-                navigateContainer.append(tmpContainerForNew);
-
-                ko.applyBindings(contentObj.viewModel, tmpContainerForNew[0]);
+                if (!sameView) {
+                    navigateContainer.empty();
+                    //tmpContainerForNew.show();
+                    navigateContainer.append(tmpContainerForNew);
+                    ko.applyBindings(contentObj.viewModel, tmpContainerForNew[0]);
+                }
 
                 function afterAnimation() {
                     //forec to refresh, because I don't know why somt time, the content is not auto refreshed.
@@ -170,7 +178,7 @@
 
             if (continueActive) {
                 self.currentActiveContent = contentObj;
-                if (navigateContainer.children().length > 0) {
+                if (!sameView && navigateContainer.children().length > 0) {
                     navigateContainer.children().each(function (index, element) {
                         ko.cleanNode(element);
                     });
