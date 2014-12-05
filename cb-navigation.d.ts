@@ -1,8 +1,8 @@
 ﻿declare module $CB.Navigation {
     interface IViewModel {
         //method for navigation
-        onActive? (continueCallback: () => void): void;
-        onInactive? (continueCallback: () => void): void;
+        onActive? (continueCallback: (continueActive?: boolean) => void): void;
+        onInactive? (continueCallback: (cancel?: boolean) => void): void;
         OnViewInit? (): void;
         OnViewUnload? (): void;
     }
