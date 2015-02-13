@@ -275,7 +275,7 @@
         }
         if ($.type(requestNew) === "function") {
             navigatedCallBack = requestNew;
-            requestNew = true;
+            requestNew = false;
             if (typeof (viewModel) !== "undefined" || typeof (viewHtml) != "undefined") {
                 throw "Incorrect method call";
             }
